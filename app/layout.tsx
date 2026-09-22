@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./storefront.css";
+import "./product-details.css";
 
 export const metadata: Metadata = {
   title: "Лидер Массив — мебель из массива дуба",

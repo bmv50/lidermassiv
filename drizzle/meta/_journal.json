@@ -8,6 +8,13 @@
       "when": 1789999102234,
       "tag": "0000_handy_sinister_six",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1790071174594,
+      "tag": "0001_productive_shinko_yamashiro",
+      "breakpoints": true
     }
   ]
 }

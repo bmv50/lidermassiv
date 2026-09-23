@@ -1,0 +1,29 @@
+CREATE TABLE IF NOT EXISTS `carts` (
+  `id` text PRIMARY KEY NOT NULL,
+  `payload` text NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS `orders` (
+  `id` text PRIMARY KEY NOT NULL,
+  `customer_id` text NOT NULL,
+  `payload` text NOT NULL,
+  `status` text NOT NULL DEFAULT 'new',
+  `created_at` text NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS `products` (
+  `id` text PRIMARY KEY NOT NULL,
+  `payload` text NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS `admin_login_attempts` (
+  `id` text PRIMARY KEY NOT NULL,
+  `window` integer NOT NULL,
+  `attempts` integer NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS `admin_sessions` (
+  `token_hash` text PRIMARY KEY NOT NULL,
+  `expires_at` integer NOT NULL,
+  `credential_version` text NOT NULL
+);

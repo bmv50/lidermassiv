@@ -1,0 +1,12 @@
+.git
+.github
+.wrangler
+.sites-runtime
+node_modules
+dist
+coverage
+.env
+.env.*
+!.env.example
+.dev.vars
+*.log

@@ -4,3 +4,7 @@
 @media(prefers-reduced-motion:reduce){.cinematic-hero>img,.room-photo>img{animation:none}.hero-motion{display:none}html{scroll-behavior:auto}}
 
 .categories{grid-template-columns:repeat(8,minmax(0,1fr))}.categories button{min-width:0}.category-image{max-width:100%}@media(max-width:750px){.categories{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* Quiet placeholders while below-the-fold photography loads. */
+.image-open,.room-photo{background:linear-gradient(135deg,#e6e3db 0%,#f1efe9 52%,#e2ddd3 100%)}
+.custom-photo{background:linear-gradient(135deg,#30483b 0%,#6f725d 48%,#243a30 100%)}

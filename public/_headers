@@ -1,0 +1,14 @@
+https://demo.lider-massiv.ru/*
+  X-Robots-Tag: noindex, nofollow
+
+/images/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
+
+/gallery/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
+
+/product-details/*
+  Cache-Control: public, max-age=86400
+
+/social/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000

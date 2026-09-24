@@ -3,12 +3,31 @@ import "./storefront.css";
 import "./product-details.css";
 import "./showcase.css";
 
+const title = "Лидер Массив — мебель из массива дуба";
+const description = "Мебель из массива дуба. Каталог, индивидуальное изготовление и доставка по России.";
+const siteOrigin = "https://demo.lider-massiv.ru";
+const isDemo = import.meta.env.VITE_DEMO_MODE === "true";
+
 export const metadata: Metadata = {
-  title: "Лидер Массив — мебель из массива дуба",
-  description: "Мебель из массива дуба. Каталог, индивидуальное изготовление и доставка по России.",
-  other: {
-    "codex-preview": "development",
+  metadataBase: new URL(siteOrigin),
+  title,
+  description,
+  robots: isDemo ? { index: false, follow: false } : undefined,
+  openGraph: {
+    type: "website",
+    locale: "ru_RU",
+    siteName: "Лидер Массив",
+    url: siteOrigin,
+    title,
+    description,
+    images: [{
+      url: "/images/social-preview.jpg",
+      width: 1200,
+      height: 630,
+      alt: "Лидер Массив — мебель из массива дуба",
+    }],
   },
+  twitter: { card: "summary_large_image", title, description, images: ["/images/social-preview.jpg"] },
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

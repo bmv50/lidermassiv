@@ -12,7 +12,7 @@ const config = path.join(root, "dist", "server", "wrangler.json");
 
 mkdirSync(persistTo, { recursive: true });
 
-const runtimeVars = ["ADMIN_LOGIN", "ADMIN_PASSWORD_HASH"];
+const runtimeVars = ["ADMIN_LOGIN", "ADMIN_PASSWORD_HASH", "CONSULTANT_PROVIDER", "CONSULTANT_DAILY_LIMIT", "YANDEX_API_KEY", "YANDEX_FOLDER_ID", "YANDEX_MODEL", "CONSULTANT_N8N_URL", "CONSULTANT_N8N_TOKEN"];
 const vars = runtimeVars
   .filter((name) => process.env[name] !== undefined)
   .map((name) => `${name}=${JSON.stringify(process.env[name])}`);

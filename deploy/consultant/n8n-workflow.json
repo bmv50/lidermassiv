@@ -1,0 +1,198 @@
+{
+  "name": "Furniture consultant — guided demo v1",
+  "nodes": [
+    {
+      "id": "a9499f8c-a445-4cc1-a5bc-c5d1d91b6129",
+      "name": "Consultant webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "d978b860-1c33-4daa-bb84-1baf711fe2db",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "furniture-consultant-v1",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Consultant shared token"
+        }
+      }
+    },
+    {
+      "id": "b9499f8c-a445-4cc1-a5bc-c5d1d91b6129",
+      "name": "Model configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        230,
+        0
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"folderId\":\"YOUR_FOLDER_ID\",\"model\":\"yandexgpt-5.1\"}",
+        "options": {}
+      }
+    },
+    {
+      "id": "c9499f8c-a445-4cc1-a5bc-c5d1d91b6129",
+      "name": "Validate public request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const input = $('Consultant webhook').first().json.body;\nconst config = $('Model configuration').first().json;\nif (!config.folderId || config.folderId === 'YOUR_FOLDER_ID' || !/^[a-zA-Z0-9_-]+$/.test(config.folderId) || !/^[a-zA-Z0-9._-]+$/.test(config.model)) throw new Error('Configure the Yandex folder and model');\nif (!input || input.schema !== 'consultant.v1' || Object.keys(input).some(k => !['schema','request'].includes(k))) throw new Error('Invalid envelope');\nconst r = input.request;\nif (!r || !Array.isArray(r.messages) || r.messages.length !== 2 || r.messages[0].role !== 'system' || r.messages[1].role !== 'user' || r.messages.some(m => typeof m.content !== 'string' || m.content.length > 24000 || Object.keys(m).some(k => !['role','content'].includes(k)))) throw new Error('Invalid request');\nif (r.store !== false || r.tools || !Number.isInteger(r.max_tokens) || r.max_tokens < 1 || r.max_tokens > 500) throw new Error('Invalid limits');\nreturn [{json:{request:{model:'gpt://' + config.folderId + '/' + config.model,messages:r.messages,store:false,max_tokens:500,temperature:0.2,response_format:{type:'json_object'}}}}];"
+      }
+    },
+    {
+      "id": "d9499f8c-a445-4cc1-a5bc-c5d1d91b6129",
+      "name": "Yandex recommendation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        690,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://ai.api.cloud.yandex.net/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-data-logging-enabled",
+              "value": "false"
+            },
+            {
+              "name": "x-folder-id",
+              "value": "={{ $('Model configuration').first().json.folderId }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.request }}",
+        "options": {
+          "timeout": 22000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Yandex AI Studio API"
+        }
+      }
+    },
+    {
+      "id": "e9499f8c-a445-4cc1-a5bc-c5d1d91b6129",
+      "name": "Validate model response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const content = $input.first().json.choices?.[0]?.message?.content;\nif (typeof content !== 'string' || content.length > 4000) throw new Error('Invalid model response');\nconst p = JSON.parse(content);\nif (!p || Object.keys(p).sort().join(',') !== 'productIds,questionIds' || !Array.isArray(p.productIds) || p.productIds.length > 3 || p.productIds.some(id => typeof id !== 'string' || id.length > 100) || !Array.isArray(p.questionIds) || p.questionIds.length > 3 || p.questionIds.some(id => !['dimensions','finish','arrangement','construction'].includes(id))) throw new Error('Invalid recommendation');\nreturn [{json:{choices:[{message:{content:JSON.stringify(p)}}]}}];"
+      }
+    },
+    {
+      "id": "f9499f8c-a445-4cc1-a5bc-c5d1d91b6129",
+      "name": "Return recommendation",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1150,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Consultant webhook": {
+      "main": [
+        [
+          {
+            "node": "Model configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Model configuration": {
+      "main": [
+        [
+          {
+            "node": "Validate public request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate public request": {
+      "main": [
+        [
+          {
+            "node": "Yandex recommendation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Yandex recommendation": {
+      "main": [
+        [
+          {
+            "node": "Validate model response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate model response": {
+      "main": [
+        [
+          {
+            "node": "Return recommendation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 40
+  },
+  "pinData": {},
+  "tags": []
+}

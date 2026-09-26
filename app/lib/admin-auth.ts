@@ -1,4 +1,5 @@
 import {db,runtime} from './shop';
+import {isSameOrigin} from './request-origin';
 
 const COOKIE='__Host-lider_admin';
 const TTL=8*60*60;
@@ -7,7 +8,7 @@ const hex=(bytes:ArrayBuffer|Uint8Array)=>Array.from(new Uint8Array(bytes)).map(
 async function digest(value:string){return hex(await crypto.subtle.digest('SHA-256',encoder.encode(value)))}
 function token(req:Request){return req.headers.get('cookie')?.split(';').map(x=>x.trim()).find(x=>x.startsWith(COOKIE+'='))?.slice(COOKIE.length+1)||''}
 export function sessionCookie(value:string,maxAge=TTL){return `${COOKIE}=${value}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${maxAge}`}
-export function sameOrigin(req:Request){return req.headers.get('origin')===new URL(req.url).origin}
+export function sameOrigin(req:Request){return isSameOrigin(req,runtime.PUBLIC_ORIGIN)}
 
 export async function isAdmin(req:Request){
  const value=token(req);if(!/^[a-f0-9]{64}$/.test(value)||!runtime.ADMIN_PASSWORD_HASH)return false;

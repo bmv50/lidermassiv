@@ -27,7 +27,7 @@ await writeFile(path.join(fixture,'deploy/schema.sql'),'CREATE TABLE IF NOT EXIS
 await writeFile(path.join(fixture,'dist/server/worker.js'),`export default {async fetch(req,env){
   const table=await env.DB.prepare("SELECT name FROM sqlite_master WHERE name='runtime_probe'").first();
   return Response.json({provider:env.CONSULTANT_PROVIDER,keyMatches:env.YANDEX_API_KEY==='synthetic-test-key',
-    folderMatches:env.YANDEX_FOLDER_ID==='synthetic-folder',demo:env.DEMO_MODE==='true',
+    folderMatches:env.YANDEX_FOLDER_ID==='synthetic-folder',demo:env.DEMO_MODE==='true',publicOrigin:env.PUBLIC_ORIGIN,
     unlistedAbsent:env.UNLISTED_TEST_SECRET===undefined,migrated:!!table});
 }};`);
 const reservation=net.createServer();reservation.listen(0,'127.0.0.1');await once(reservation,'listening');
@@ -35,7 +35,7 @@ const port=reservation.address().port;await new Promise(resolve=>reservation.clo
 const child=spawn(process.execPath,[path.join(fixture,'scripts/coolify-start.mjs')],{
   cwd:fixture,stdio:['ignore','pipe','pipe'],windowsHide:true,
   env:{...process.env,PORT:String(port),SITES_RUNTIME_ROOT:path.join(fixture,'state'),
-    CONSULTANT_PROVIDER:'yandex',YANDEX_API_KEY:'synthetic-test-key',YANDEX_FOLDER_ID:'synthetic-folder',
+    CONSULTANT_PROVIDER:'yandex',YANDEX_API_KEY:'synthetic-test-key',YANDEX_FOLDER_ID:'synthetic-folder',PUBLIC_ORIGIN:'https://runtime-test.example',
     ADMIN_LOGIN:'runtime-test',ADMIN_PASSWORD_HASH:'synthetic-admin-hash',
     UNLISTED_TEST_SECRET:'not-a-worker-binding',CLOUDFLARE_CF_FETCH_ENABLED:'false',WRANGLER_SEND_METRICS:'false',
     WRANGLER_WRITE_LOGS:'false',WRANGLER_LOG_PATH:path.join(fixture,'state','logs'),
@@ -49,7 +49,7 @@ try {
     try{const response=await fetch(`http://127.0.0.1:${port}/`,{signal:AbortSignal.timeout(1000)});if(response.ok){result=await response.json();break;}}catch{}
     await new Promise(resolve=>setTimeout(resolve,250));
   }
-  assert.deepEqual(result,{provider:'yandex',keyMatches:true,folderMatches:true,demo:true,unlistedAbsent:true,migrated:true});
+  assert.deepEqual(result,{provider:'yandex',keyMatches:true,folderMatches:true,demo:true,publicOrigin:'https://runtime-test.example',unlistedAbsent:true,migrated:true});
   console.log('PASS: production launcher loads Runtime variables and demo mode; migration persists; unrelated environment is excluded.');
 } catch(error){
   console.error(logs.replaceAll('synthetic-test-key','[test key]').replaceAll('synthetic-admin-hash','[test hash]').slice(-5000));

@@ -4,6 +4,20 @@ import {DatabaseSync} from 'node:sqlite';
 import fs from 'node:fs';
 import {parseScenario,candidatesFor,validatePlan,referencePlan,renderReply,consultantStatus,requestPlan,contextHash} from '../work/consultant-tests/consultant.mjs';
 import {resolvePlan} from '../work/consultant-tests/consultant-cache.mjs';
+import {isSameOrigin} from '../work/consultant-tests/request-origin.mjs';
+test('reverse-proxy origin uses explicit configuration and rejects forged headers',()=>{
+  const request=(origin,extra={})=>new Request('http://internal:8787/api/consultant',{headers:{...(origin?{Origin:origin}:{}),...extra}});
+  const publicOrigin='https://demo.lider-massiv.ru';
+  assert.equal(isSameOrigin(request(publicOrigin),publicOrigin),true);
+  assert.equal(isSameOrigin(request(publicOrigin),publicOrigin+'/'),true);
+  for(const origin of [undefined,'null','https://other.example','http://demo.lider-massiv.ru','https://demo.lider-massiv.ru.evil.example'])
+    assert.equal(isSameOrigin(request(origin,{'x-forwarded-host':'other.example','x-forwarded-proto':'https'}),publicOrigin),false);
+  assert.equal(isSameOrigin(request(publicOrigin,{'sec-fetch-site':'cross-site'}),publicOrigin),false);
+  for(const config of ['','invalid','https://user:pass@demo.lider-massiv.ru','https://demo.lider-massiv.ru/path','https://demo.lider-massiv.ru?x=1'])
+    assert.equal(isSameOrigin(request(publicOrigin),config),false);
+  assert.equal(isSameOrigin(request('http://internal:8787')),true);
+  assert.equal(isSameOrigin(request(publicOrigin,{'x-forwarded-host':'demo.lider-massiv.ru','x-forwarded-proto':'https'})),false);
+});
 const product={id:'a',name:'Стол обеденный А',category:'Столы',price:100000,discount:25,image:'/images/a.webp',active:1,stock:1};
 const catalog=[product,{...product,id:'b',active:0},{...product,id:'c',discount:0},{...product,id:'d',category:'Комоды'}];
 const candidates=candidatesFor('dining',catalog);

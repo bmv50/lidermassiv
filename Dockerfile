@@ -14,6 +14,7 @@ FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=8787 \
+    PUBLIC_ORIGIN=https://demo.lider-massiv.ru \
     SITES_RUNTIME_ROOT=/data \
     WRANGLER_SEND_METRICS=false \
     CLOUDFLARE_CF_FETCH_ENABLED=false

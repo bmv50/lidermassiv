@@ -1,11 +1,11 @@
 import {allProducts,db,runtime} from '../../lib/shop';
 import {candidatesFor,consultantStatus,parseScenario,renderReply,referencePlan} from '../../lib/consultant';
 import {resolvePlan} from '../../lib/consultant-cache';
+import {isSameOrigin} from '../../lib/request-origin';
 const json=(value:unknown,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store'}});
 export async function GET(){return json(consultantStatus(runtime));}
 export async function POST(req:Request){
-  const origin=req.headers.get('origin');
-  if(origin!==new URL(req.url).origin || req.headers.get('sec-fetch-site')==='cross-site') return json({error:'Недопустимый источник запроса.'},403);
+  if(!isSameOrigin(req,runtime.PUBLIC_ORIGIN)) return json({error:'Недопустимый источник запроса.'},403);
   if(!req.headers.get('content-type')?.startsWith('application/json')) return json({error:'Ожидается JSON.'},415);
   const reader=req.body?.getReader();if(!reader)return json({error:'Выберите пример запроса.'},400);
   let body='';const decoder=new TextDecoder();let size=0;

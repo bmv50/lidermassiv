@@ -11,10 +11,17 @@ ENV VITE_DEMO_MODE=true
 RUN npm run build
 
 FROM node:22-bookworm-slim AS runtime
+# Workerd uses the system CA store on Linux; Node's bundled roots alone are
+# insufficient for outbound HTTPS from the worker in the slim image.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && test -s /etc/ssl/certs/ca-certificates.crt
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=8787 \
     PUBLIC_ORIGIN=https://demo.lider-massiv.ru \
+    NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt \
     SITES_RUNTIME_ROOT=/data \
     WRANGLER_SEND_METRICS=false \
     CLOUDFLARE_CF_FETCH_ENABLED=false

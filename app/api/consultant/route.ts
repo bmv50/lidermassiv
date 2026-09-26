@@ -16,7 +16,7 @@ export async function POST(req:Request){
     const candidates=candidatesFor(scenario,await allProducts());
     // Failure to acquire a DB budget never initiates a paid upstream request.
     let result={plan:referencePlan(scenario,candidates),source:'reference' as 'ai'|'reference'};
-    try{result=await resolvePlan(db(),scenario,candidates,runtime);}catch{}
+    try{result=await resolvePlan(db(),scenario,candidates,runtime);}catch{console.warn('[consultant]',JSON.stringify({scenario,code:'storage_error'}));}
     return json(renderReply(scenario,result.plan,candidates,result.source));
   } catch {return json({error:'Каталог временно недоступен. Попробуйте ещё раз.'},503);}
 }

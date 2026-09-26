@@ -1,4 +1,4 @@
-import {consultantStatus,contextHash,referencePlan,requestPlan,validatePlan,type Scenario,type ProductCard,type Plan} from './consultant';
+import {consultantStatus,contextHash,referencePlan,requestPlan,validatePlan,failureCode,type Scenario,type ProductCard,type Plan} from './consultant';
 type CacheRow = {context_hash:string;payload:string;expires_at:number};
 // Both tables are shared counters/cache; never contain visitor identifiers or conversations.
 export async function resolvePlan(database:D1Database,scenario:Scenario,candidates:ProductCard[],settings:Record<string,unknown>):Promise<{plan:Plan;source:'ai'|'reference'}> {
@@ -24,7 +24,10 @@ export async function resolvePlan(database:D1Database,scenario:Scenario,candidat
       ON CONFLICT(day) DO UPDATE SET attempts=attempts+1 WHERE attempts < ? RETURNING attempts`).bind(day,limit).first();
     let result=fallback as {plan:Plan;source:'ai'|'reference'};
     if(allowance) {
-      try {result={plan:await requestPlan(scenario,candidates,settings),source:'ai'};} catch { /* No upstream body or request content in logs. */ }
+      try {result={plan:await requestPlan(scenario,candidates,settings),source:'ai'};} catch(error) {
+        // Only a fixed diagnostic code, never error bodies, credentials or model output.
+        console.warn('[consultant]',JSON.stringify({scenario,code:failureCode(error)}));
+      }
     }
     await database.prepare(`UPDATE consultant_demo_cache SET context_hash=?,payload=?,expires_at=?,lease_until=0,lease_id=''
       WHERE scenario=? AND lease_id=?`).bind(hash,JSON.stringify(result),now+(result.source==='ai'?86400000:120000),scenario,lease).run();

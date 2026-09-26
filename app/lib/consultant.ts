@@ -94,7 +94,7 @@ export async function requestPlan(scenario:Scenario,candidates:ProductCard[],set
       {'Content-Type':'application/json',Authorization:`Bearer ${settings.YANDEX_API_KEY}`,'x-folder-id':String(settings.YANDEX_FOLDER_ID),'x-data-logging-enabled':'false'}:
       {'Content-Type':'application/json','X-Consultant-Token':String(settings.CONSULTANT_N8N_TOKEN)},
     body:JSON.stringify(direct?request:{schema:'consultant.v1',request})});
-  if(!response.ok) throw Error('provider_unavailable');
+  if(!response.ok) throw Error(`provider_http_${response.status}`);
   // Enforce a byte bound even if the upstream omits Content-Length.
   const reader=response.body?.getReader(); if(!reader) throw Error('empty_response');
   const chunks:Uint8Array[]=[];let length=0;
@@ -104,6 +104,13 @@ export async function requestPlan(scenario:Scenario,candidates:ProductCard[],set
   const content=data.choices?.[0]?.message?.content;
   if(typeof content!=='string') throw Error('invalid_response');
   return validatePlan(JSON.parse(content),candidates);
+}
+export function failureCode(error:unknown):string {
+  if(!(error instanceof Error))return 'unknown_error';
+  if(/^(provider_http_[1-5][0-9]{2}|not_configured|invalid_model_configuration|empty_response|response_too_large|invalid_response|invalid_plan)$/.test(error.message))return error.message;
+  if(error.name==='TimeoutError'||error.name==='AbortError')return 'provider_timeout';
+  if(error.name==='SyntaxError')return 'invalid_json';
+  return 'provider_request_failed';
 }
 export async function contextHash(scenario:Scenario,candidates:ProductCard[],settings:Settings) {
   const text=JSON.stringify([promptVersion,scenario,candidates,settings.CONSULTANT_PROVIDER,settings.YANDEX_MODEL,settings.YANDEX_FOLDER_ID,settings.CONSULTANT_N8N_URL]);

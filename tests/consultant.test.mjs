@@ -2,9 +2,15 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import fs from 'node:fs';
-import {parseScenario,candidatesFor,validatePlan,referencePlan,renderReply,consultantStatus,requestPlan,contextHash} from '../work/consultant-tests/consultant.mjs';
+import {parseScenario,candidatesFor,validatePlan,referencePlan,renderReply,consultantStatus,requestPlan,contextHash,failureCode} from '../work/consultant-tests/consultant.mjs';
 import {resolvePlan} from '../work/consultant-tests/consultant-cache.mjs';
 import {isSameOrigin} from '../work/consultant-tests/request-origin.mjs';
+test('diagnostics only contain allowlisted codes, not upstream secrets or body text',()=>{
+  assert.equal(failureCode(new Error('provider_http_403')),'provider_http_403');
+  assert.equal(failureCode(new Error('invalid_plan')),'invalid_plan');
+  assert.equal(failureCode(new Error('credentials: confidential upstream response')),'provider_request_failed');
+  assert.equal(failureCode(new Error('provider_http_403 secret')),'provider_request_failed');
+});
 test('reverse-proxy origin uses explicit configuration and rejects forged headers',()=>{
   const request=(origin,extra={})=>new Request('http://internal:8787/api/consultant',{headers:{...(origin?{Origin:origin}:{}),...extra}});
   const publicOrigin='https://demo.lider-massiv.ru';

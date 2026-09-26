@@ -28,7 +28,7 @@ COPY --from=build --chown=node:node /app/scripts/sites-env.mjs ./scripts/sites-e
 COPY --from=build --chown=node:node /app/scripts/coolify-start.mjs ./scripts/coolify-start.mjs
 COPY --from=build --chown=node:node /app/deploy/schema.sql ./deploy/schema.sql
 
-RUN mkdir -p /data && touch /app/.dev.vars && chown node:node /data /app/.dev.vars
+RUN mkdir -p /data && chown node:node /data
 USER node
 EXPOSE 8787
 CMD ["node", "scripts/coolify-start.mjs"]

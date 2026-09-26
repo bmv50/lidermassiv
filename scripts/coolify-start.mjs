@@ -6,9 +6,10 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const stateRoot = process.env.SITES_RUNTIME_ROOT || "/data";
 const persistTo = path.join(stateRoot, "wrangler", "state");
-const varsFile = path.join(root, ".dev.vars");
 const wrangler = path.join(root, "node_modules", "wrangler", "bin", "wrangler.js");
 const config = path.join(root, "dist", "server", "wrangler.json");
+// Wrangler resolves .dev.vars beside --config, not from the process cwd.
+const varsFile = path.join(path.dirname(config), ".dev.vars");
 
 mkdirSync(persistTo, { recursive: true });
 

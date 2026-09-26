@@ -90,7 +90,9 @@ export async function requestPlan(scenario:Scenario,candidates:ProductCard[],set
   const request = modelRequest(scenario,candidates,status.provider==='n8n'?{YANDEX_FOLDER_ID:'configured-in-n8n',YANDEX_MODEL:'yandexgpt-5.1'}:settings);
   const direct = status.provider==='yandex';
   const response = await fetcher(direct?'https://ai.api.cloud.yandex.net/v1/chat/completions':String(settings.CONSULTANT_N8N_URL),{
-    method:'POST',redirect:'error',signal:AbortSignal.timeout(25000),headers:direct?
+    // Workerd supports follow/manual, not the browser's error mode. Reject 3xx
+    // below without following Location, so credentials never move to a redirect.
+    method:'POST',redirect:'manual',signal:AbortSignal.timeout(25000),headers:direct?
       {'Content-Type':'application/json',Authorization:`Bearer ${settings.YANDEX_API_KEY}`,'x-folder-id':String(settings.YANDEX_FOLDER_ID),'x-data-logging-enabled':'false'}:
       {'Content-Type':'application/json','X-Consultant-Token':String(settings.CONSULTANT_N8N_TOKEN)},
     body:JSON.stringify(direct?request:{schema:'consultant.v1',request})});

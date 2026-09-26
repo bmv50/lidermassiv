@@ -64,7 +64,7 @@ test('missing configuration stays in reference mode',()=>{
 test('Yandex request uses fixed endpoint, server credential and no conversation storage',async()=>{
   const result=await requestPlan('dining',candidates,settings,async(url,init)=>{
     assert.equal(url,'https://ai.api.cloud.yandex.net/v1/chat/completions');assert.equal(init.headers.Authorization,'Bearer test-key-not-real');
-    assert.equal(init.headers['x-data-logging-enabled'],'false');assert.equal(init.redirect,'error');
+    assert.equal(init.headers['x-data-logging-enabled'],'false');assert.equal(init.redirect,'manual');
     const body=JSON.parse(init.body);assert.equal(body.store,false);assert.equal(body.model,'gpt://test-folder/yandexgpt-5.1');
     assert.equal(body.messages.length,2);assert.ok(body.max_tokens<=500);assert.equal(body.tools,undefined);return reply();
   });assert.deepEqual(result,plan);

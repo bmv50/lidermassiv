@@ -1,4 +1,4 @@
-// Public catalogue data only. This pilot deliberately accepts no visitor text.
+// Shared catalogue types and legacy guided recommendations.
 export const scenarios = {
   dining: {label: 'Обеденный стол до 80 000 ₽', categories: ['Столы', 'Столы-трансформеры'], budget: 80000},
   bedroom: {label: 'Мебель для спальни', categories: ['Кровати', 'Тумбы', 'Комоды'], budget: 0},
@@ -67,7 +67,7 @@ export function consultantStatus(settings:Settings) {
   const provider = settings.CONSULTANT_PROVIDER;
   const configured = provider==='yandex' ? !!(settings.YANDEX_API_KEY && settings.YANDEX_FOLDER_ID)
     : provider==='n8n' ? !!(validWebhook(settings.CONSULTANT_N8N_URL) && settings.CONSULTANT_N8N_TOKEN) : false;
-  return {mode:'guided_demo' as const,configured,provider:configured?provider as 'yandex'|'n8n':'disabled' as const};
+  return {mode:'chat_demo' as const,configured,chatConfigured:configured&&provider==='yandex',provider:configured?provider as 'yandex'|'n8n':'disabled' as const};
 }
 function validWebhook(value:unknown) {
   try {const url=new URL(String(value));return url.protocol==='https:' && !url.username && !url.password && !url.hash && !url.search;} catch{return false;}
@@ -88,6 +88,11 @@ export async function requestPlan(scenario:Scenario,candidates:ProductCard[],set
   if(!status.configured) throw Error('not_configured');
   // n8n injects its folder/model itself; no provider secret is sent to it.
   const request = modelRequest(scenario,candidates,status.provider==='n8n'?{YANDEX_FOLDER_ID:'configured-in-n8n',YANDEX_MODEL:'yandexgpt-5.1'}:settings);
+  return validatePlan(await requestCompletion(request,settings,fetcher),candidates);
+}
+export async function requestCompletion(request:unknown,settings:Settings,fetcher:typeof fetch=fetch):Promise<unknown> {
+  const status=consultantStatus(settings);
+  if(!status.configured)throw Error('not_configured');
   const direct = status.provider==='yandex';
   const response = await fetcher(direct?'https://ai.api.cloud.yandex.net/v1/chat/completions':String(settings.CONSULTANT_N8N_URL),{
     // Workerd supports follow/manual, not the browser's error mode. Reject 3xx
@@ -105,7 +110,7 @@ export async function requestPlan(scenario:Scenario,candidates:ProductCard[],set
   const data=JSON.parse(new TextDecoder().decode(bytes));
   const content=data.choices?.[0]?.message?.content;
   if(typeof content!=='string') throw Error('invalid_response');
-  return validatePlan(JSON.parse(content),candidates);
+  return JSON.parse(content);
 }
 export function failureCode(error:unknown):string {
   if(!(error instanceof Error))return 'unknown_error';

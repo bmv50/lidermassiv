@@ -1,5 +1,14 @@
 import {consultantStatus,contextHash,referencePlan,requestPlan,validatePlan,failureCode,type Scenario,type ProductCard,type Plan} from './consultant';
 type CacheRow = {context_hash:string;payload:string;expires_at:number};
+// One shared, atomic allowance for guided recommendations and free chat.
+export async function reserveConsultantAttempt(database:D1Database,settings:Record<string,unknown>,now=Date.now()):Promise<boolean> {
+  const configuredLimit=Number(settings.CONSULTANT_DAILY_LIMIT || 20);
+  const limit=Number.isFinite(configuredLimit)?Math.max(1,Math.min(100,Math.floor(configuredLimit))):20;
+  const day=new Date(now).toISOString().slice(0,10);
+  await database.prepare('DELETE FROM consultant_daily_budget WHERE day < ?').bind(new Date(now-8*86400000).toISOString().slice(0,10)).run();
+  return !!await database.prepare(`INSERT INTO consultant_daily_budget(day,attempts) VALUES (?,1)
+    ON CONFLICT(day) DO UPDATE SET attempts=attempts+1 WHERE attempts < ? RETURNING attempts`).bind(day,limit).first();
+}
 // Both tables are shared counters/cache; never contain visitor identifiers or conversations.
 export async function resolvePlan(database:D1Database,scenario:Scenario,candidates:ProductCard[],settings:Record<string,unknown>):Promise<{plan:Plan;source:'ai'|'reference'}> {
   const fallback={plan:referencePlan(scenario,candidates),source:'reference' as const};
@@ -16,12 +25,7 @@ export async function resolvePlan(database:D1Database,scenario:Scenario,candidat
     RETURNING lease_id`).bind(scenario,hash,lease,now+60000,now,now,hash).first();
   if(!lock) return fallback;
   try {
-    const configuredLimit=Number(settings.CONSULTANT_DAILY_LIMIT || 20);
-    const limit=Number.isFinite(configuredLimit)?Math.max(1,Math.min(100,Math.floor(configuredLimit))):20;
-    const day=new Date(now).toISOString().slice(0,10);
-    await database.prepare('DELETE FROM consultant_daily_budget WHERE day < ?').bind(new Date(now-8*86400000).toISOString().slice(0,10)).run();
-    const allowance=await database.prepare(`INSERT INTO consultant_daily_budget(day,attempts) VALUES (?,1)
-      ON CONFLICT(day) DO UPDATE SET attempts=attempts+1 WHERE attempts < ? RETURNING attempts`).bind(day,limit).first();
+    const allowance=await reserveConsultantAttempt(database,settings,now);
     let result=fallback as {plan:Plan;source:'ai'|'reference'};
     if(allowance) {
       try {result={plan:await requestPlan(scenario,candidates,settings),source:'ai'};} catch(error) {

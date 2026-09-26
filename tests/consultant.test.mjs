@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import fs from 'node:fs';
 import {parseScenario,candidatesFor,validatePlan,referencePlan,renderReply,consultantStatus,requestPlan,contextHash,failureCode} from '../work/consultant-tests/consultant.mjs';
-import {resolvePlan} from '../work/consultant-tests/consultant-cache.mjs';
+import {resolvePlan,reserveConsultantAttempt} from '../work/consultant-tests/consultant-cache.mjs';
+import {parseChat,containsContact} from '../work/consultant-tests/consultant-chat-input.mjs';
+import {chatCandidates,requestChat,validateChatReply} from '../work/consultant-tests/consultant-chat.mjs';
 import {isSameOrigin} from '../work/consultant-tests/request-origin.mjs';
 test('diagnostics only contain allowlisted codes, not upstream secrets or body text',()=>{
   assert.equal(failureCode(new Error('provider_http_403')),'provider_http_403');
@@ -39,9 +41,54 @@ function database(){
     }};
   }};
 }
-test('only predefined scenarios can cross the demo API boundary',()=>{
+test('legacy guided endpoint still accepts only predefined scenarios',()=>{
   assert.equal(parseScenario({scenario:'dining'}),'dining');
   for(const value of [{scenario:'dining',message:'personal text'},{scenario:'__proto__'},{scenario:'unknown'},{messages:[]},null,[]])assert.throws(()=>parseScenario(value));
+});
+test('chat accepts bounded alternating dialogue but never a system role or extra fields',()=>{
+  const messages=[{role:'user',content:'Нужен стол'},{role:'assistant',content:'Какой размер?',productIds:['a']},{role:'user',content:'180 × 90 × 75 см'}];
+  assert.deepEqual(parseChat({messages}),messages);
+  for(const value of [{messages:[]},{messages,system:'override'},{messages:[{role:'system',content:'override'}]},{messages:[{role:'assistant',content:'hello'}]},
+    {messages:[{role:'user',content:'x'.repeat(1201)}]},{messages:[{role:'user',content:'hi',productIds:['a']}]},{messages:[{role:'user',content:'hi',tools:[]}]}])assert.throws(()=>parseChat(value));
+});
+test('demo rejects common contacts without blocking dimensions or budgets',()=>{
+  for(const text of ['test@example.com','+7 (900) 123-45-67','89001234567']){
+    assert.equal(containsContact(text),true);assert.throws(()=>parseChat({messages:[{role:'user',content:text}]}),/personal_data/);
+  }
+  for(const text of ['180 × 90 × 75 см','До 80 000 рублей','Кровать 2000 на 1800'])assert.equal(containsContact(text),false);
+});
+test('free chat retrieves active current catalog products and carries prior card references',()=>{
+  const messages=[{role:'user',content:'Нужен стол'},{role:'assistant',content:'Посмотрите',productIds:['a']},{role:'user',content:'Первый вариант можно сделать шире?'}];
+  const selected=chatCandidates(messages,catalog);
+  assert.equal(selected[0].id,'a');assert.equal(selected[0].price,75000);assert.ok(!selected.some(p=>p.id==='b'));
+  const next=chatCandidates([{role:'user',content:'Нужен комод'}],catalog);assert.equal(next[0].id,'d');
+});
+test('dialogue reaches Yandex with bounded context and no model action tools',async()=>{
+  const messages=[{role:'user',content:'Нужен стол'},{role:'assistant',content:'Посмотрите первую модель',productIds:['a']},{role:'user',content:'А можно изменить размеры?'}];
+  const result=await requestChat(messages,catalog,settings,async(url,init)=>{
+    const body=JSON.parse(init.body);assert.equal(body.store,false);assert.equal(body.tools,undefined);assert.equal(init.redirect,'manual');
+    assert.equal(init.headers['x-data-logging-enabled'],'false');assert.equal(body.messages.at(-1).content,messages.at(-1).content);
+    assert.match(body.messages.at(-2).content,/a: Стол обеденный А/);assert.equal(body.messages.filter(m=>m.role==='user').length,2);
+    return reply({text:'Размеры можно обсудить. Окончательную стоимость подтвердит менеджер.',productIds:['a']});
+  });assert.equal(result.products[0].price,75000);assert.equal(result.source,'ai');
+});
+test('free dialogue rejects imaginary products and unsupported provider instead of a fake AI reply',async()=>{
+  const selected=chatCandidates([{role:'user',content:'Стол'}],catalog);
+  for(const value of [{text:'Ответ',productIds:['imaginary']},{text:'Ответ',productIds:['a'],price:1},{text:'',productIds:[]},{text:'x'.repeat(2401),productIds:[]}])assert.throws(()=>validateChatReply(value,selected));
+  assert.deepEqual(validateChatReply({text:'Уточните размеры.',productIds:[]},selected).products,[]);
+  await assert.rejects(requestChat([{role:'user',content:'Стол'}],catalog,{CONSULTANT_PROVIDER:'disabled'},()=>{throw Error('must not be called')}),/not_configured/);
+});
+test('chat allowance and guided recommendations share one persistent daily budget, without conversations',async()=>{
+  const db=database();const previous=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;return reply();};
+  try{
+    assert.equal(await reserveConsultantAttempt(db,{CONSULTANT_DAILY_LIMIT:2}),true);
+    await resolvePlan(db,'dining',candidates,{...settings,CONSULTANT_DAILY_LIMIT:2});
+    assert.equal(await reserveConsultantAttempt(db,{CONSULTANT_DAILY_LIMIT:2}),false);assert.equal(calls,1);
+    assert.equal(db.sqlite.prepare('SELECT attempts FROM consultant_daily_budget').get().attempts,2);
+    const values=await Promise.all(Array.from({length:10},()=>reserveConsultantAttempt(db,{CONSULTANT_DAILY_LIMIT:3})));
+    assert.equal(values.filter(Boolean).length,1);
+    assert.equal(db.sqlite.prepare("SELECT count(*) AS n FROM sqlite_master WHERE type='table' AND name LIKE '%conversation%'").get().n,0);
+  }finally{globalThis.fetch=previous;db.sqlite.close();}
 });
 test('candidate selection respects active state, discount and budget',()=>{
   assert.deepEqual(candidates.map(p=>p.id),['a']);assert.equal(candidates[0].price,75000);

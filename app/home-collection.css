@@ -9,7 +9,9 @@
 .collection-tabs button,.collection-tabs select{font-size:13px;white-space:nowrap;padding:14px 0 17px;border:0;border-bottom:2px solid transparent;color:#73756c;background:transparent}
 .collection-tabs .is-active{color:#263e31;border-bottom-color:#263e31}
 .collection-tabs button:hover,.collection-tabs select:focus{color:#263e31}
-.collection-tabs select{max-width:155px;cursor:pointer;padding-right:10px}
+.collection-tabs select{max-width:155px;cursor:pointer;padding-right:25px;appearance:none;-webkit-appearance:none;border-radius:0;outline:none;box-shadow:none;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 9px) 49%,calc(100% - 5px) 49%;background-size:4px 4px;background-repeat:no-repeat}
+.collection-tabs select:focus{outline:none;box-shadow:none}
+.collection-tabs select:focus-visible{border-bottom-color:currentColor}
 .collection-search-toggle{display:flex;gap:9px;align-items:center;font-size:12px;padding:14px 0 17px;color:#60685c;flex-shrink:0}
 .collection-search{display:flex;gap:20px;align-items:center;margin:-5px 0 28px;max-width:650px}
 .collection-search label{margin:0;white-space:nowrap;color:#62695e;font-size:13px}

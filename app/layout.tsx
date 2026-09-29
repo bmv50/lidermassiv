@@ -3,7 +3,6 @@ import "./storefront.css";
 import "./product-details.css";
 import "./showcase.css";
 import "./home-collection.css";
-import "./atelier.css";
 
 const title = "Лидер Массив — мебель из массива дуба";
 const description = "Мебель из массива дуба. Каталог, индивидуальное изготовление и доставка по России.";

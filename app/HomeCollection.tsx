@@ -7,7 +7,7 @@ import type seed from './data/products.json';
 type Product = typeof seed[number];
 type Details = {images: string[]; specifications: {name: string; value: string}[]};
 const detailCache = new Map<string, Details>();
-const selection = ['84027', '82715', '83719', '82804', '82976', '83718'];
+const selection = ['84027', '82715', '83719', '83892', '82976', '83718'];
 const money = (value: number) => new Intl.NumberFormat('ru-RU').format(value) + ' ₽';
 
 function dimensions(details: Details | null) {
@@ -47,7 +47,6 @@ function CollectionCard({product, saved, onFavorite, onSelect, onAdd}: {
   const alternative = details?.images.find((src, index) => index > 0 && src !== product.image && !failed.includes(src));
   const second = Boolean(alternative) && readyImage === alternative && (hovered || photo === 1);
   const size = dimensions(details);
-  const cover = product.id === '82804' && product.image === '/images/82804.jpg' ? '/gallery/2c0aa08e2a960b66dba7f2c1.webp' : product.image;
   const finalPrice = Math.round(product.price * (1 - product.discount / 100));
   function move() {setHovered(false); setPhoto(value => value === 0 ? 1 : 0);}
 
@@ -64,7 +63,7 @@ function CollectionCard({product, saved, onFavorite, onSelect, onAdd}: {
           if (alternative && Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {event.preventDefault(); move();}
           touch.current = null;
         }} onTouchCancel={() => {touch.current = null;}}>
-        <img className="collection-cover" src={cover} alt={product.name} loading="lazy" decoding="async"/>
+        <img className="collection-cover" src={product.image} alt={product.name} loading="lazy" decoding="async"/>
         {alternative && <img className="collection-alternate" src={alternative} alt={`${product.name} — другой ракурс`} loading="lazy" decoding="async" onLoad={() => setReadyImage(alternative)} onError={() => setFailed(values => [...values, alternative])}/>}
         <span className="collection-photo-link">Рассмотреть <ArrowUpRight size={16}/></span>
       </button>

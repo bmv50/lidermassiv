@@ -3,6 +3,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, Heart, Search, ShoppingBag, X} from 'lucide-react';
 import type seed from './data/products.json';
+import ProgressivePhoto from './ProgressivePhoto';
 
 type Product = typeof seed[number];
 type Details = {images: string[]; specifications: {name: string; value: string}[]};
@@ -63,7 +64,7 @@ function CollectionCard({product, saved, onFavorite, onSelect, onAdd}: {
           if (alternative && Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {event.preventDefault(); move();}
           touch.current = null;
         }} onTouchCancel={() => {touch.current = null;}}>
-        <img className="collection-cover" src={product.image} alt={product.name} loading="lazy" decoding="async"/>
+        <ProgressivePhoto key={product.image} className="collection-cover" src={product.image} alt={product.name}/>
         {alternative && <img className="collection-alternate" src={alternative} alt={`${product.name} — другой ракурс`} loading="lazy" decoding="async" onLoad={() => setReadyImage(alternative)} onError={() => setFailed(values => [...values, alternative])}/>}
         <span className="collection-photo-link">Рассмотреть <ArrowUpRight size={16}/></span>
       </button>
@@ -102,7 +103,7 @@ export default function HomeCollection({products, categories, category, onCatego
   if (favOnly) params.set('favorites', '1');
   const catalogLink = '/catalog' + (params.size ? '?' + params.toString() : '');
 
-  return <section className="section home-collection" id="catalog" aria-labelledby="home-collection-title">
+  return <section className="section home-collection" id="catalog" tabIndex={-1} aria-labelledby="home-collection-title">
     <div className="collection-heading"><div><span className="eyebrow">ИЗБРАННЫЕ МОДЕЛИ / ЛИДЕР МАССИВ</span><h2 id="home-collection-title">{favOnly ? 'Ваше избранное' : <>Предметы <em>с характером.</em></>}</h2></div><p>Естественная красота дуба. <br/>Формы, к которым хочется прикоснуться.</p></div>
     <div className="collection-navigation"><div className="collection-tabs" aria-label="Категории мебели">{categories.slice(0, 5).map((item, index) => <button key={item} className={category === item ? 'is-active' : ''} aria-pressed={category === item} onClick={() => onCategory(item)}>{index === 0 ? 'Подборка' : item}</button>)}<select aria-label="Другие категории" value={categories.slice(5).includes(category) ? category : ''} onChange={event => onCategory(event.target.value)}><option value="" disabled>Ещё категории</option>{categories.slice(5).map(item => <option key={item}>{item}</option>)}</select></div><button className="collection-search-toggle" aria-label={showSearch ? 'Закрыть поиск' : 'Найти мебель'} aria-expanded={showSearch} aria-controls="collection-search" onClick={() => {onSearch(!showSearch); if (showSearch) onQuery('');}}>{showSearch ? <X size={18}/> : <Search size={18}/>}<span>Поиск</span></button></div>
     {showSearch && <div className="collection-search" id="collection-search"><label htmlFor="search">Найти свою мебель</label><input ref={search} id="search" type="search" placeholder="Название модели…" value={query} onChange={event => onQuery(event.target.value)}/></div>}

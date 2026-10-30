@@ -1,0 +1,52 @@
+/* Preserve the established oak, cream, and forest palette. */
+.skip-link{position:fixed;top:12px;left:12px;z-index:200;background:var(--green);color:#fff;padding:8px 12px;transform:translateY(-160%);text-decoration:none}
+.skip-link:focus-visible{transform:translateY(0);outline:2px solid #a37c4f;outline-offset:2px}
+.search:focus-within{border-bottom-color:#a37c4f}
+.search input:focus-visible,.collection-search input:focus-visible,.collection-tabs select:focus-visible,.filters select:focus-visible,.modal input:focus-visible,.modal textarea:focus-visible,.modal select:focus-visible{outline:2px solid #a37c4f;outline-offset:3px}
+.collection-heading h2,.section-heading h2,.room-copy h3,.about-section h2{text-wrap:balance}
+.collection-heading>p,.room-copy>p,.about-section p{text-wrap:pretty}
+.category-image,.image-open{position:relative}
+.shop-image-placeholder,.shop-image-unavailable{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;background:#eeece5}
+.shop-image-placeholder>span{width:48%;height:38%;border:1px solid #deded4;background:#f8f7f3;animation:photo-pulse 800ms cubic-bezier(0.22,1,0.36,1) infinite alternate}
+.shop-image-unavailable{padding:16px;text-align:center;font-size:12px;line-height:16px;color:#7c8179}
+.collection-photo .shop-image-placeholder>span{width:42%;height:40%}
+.category-image .shop-image-placeholder>span{width:45%;height:45%}
+.collection-card h3,.product-name{text-wrap:balance}
+.crm.crm{font-family:'Manrope',Arial,sans-serif}
+.crm :is(button,a,input,select,textarea):focus-visible{outline:2px solid #a37c4f;outline-offset:3px}
+.crm .crm-kicker,.crm .crm-side-caption,.crm .crm-metric-label,.crm .crm-order-main small,.crm .crm-footnote{font-size:12px}
+.crm .crm-order-main b,.crm .crm-status,.crm .crm-rank-list b{font-size:12px}
+@keyframes photo-pulse{from{opacity:.45}to{opacity:.9}}
+@media(max-width:800px){
+  .benefits small{font-size:12px}
+  .category-section .categories button{font-size:12px}
+  .product-meta{font-size:12px}
+  .product-name{font-size:16px;min-height:72px;line-height:24px}
+  .footer-bottom{font-size:12px}
+}
+@media(max-width:420px){
+  .collection-card-meta,.collection-card-meta span:last-child{font-size:12px;letter-spacing:0}
+  .collection-card h3{font-size:16px;line-height:24px;min-height:72px}
+  .collection-dimensions,.collection-photo-controls span{font-size:12px}
+  .collection-price strong{font-size:16px}
+  .collection-heading>p,.collection-footer small{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){.shop-image-placeholder>span{animation:none}}
+
+.not-found{min-height:100dvh;background:var(--cream);color:var(--ink);padding:32px 6% 80px}
+.not-found-brand{display:inline-flex;flex-direction:column;font-size:16px;font-weight:600;letter-spacing:2px;line-height:24px}
+.not-found-brand span{font-size:12px;font-weight:400;letter-spacing:1px}
+.not-found-content{max-width:680px;margin:96px auto 0}
+.not-found h1{font-family:'Prata',Georgia,serif;font-size:clamp(36px,5vw,60px);line-height:1.2;font-weight:400;margin:24px 0;text-wrap:balance}
+.not-found p{font-size:16px;line-height:24px;max-width:560px;text-wrap:pretty;color:var(--muted)}
+.not-found-actions{display:flex;gap:32px;align-items:center;margin-top:40px}
+.not-found-actions a{display:inline-flex;align-items:center;gap:12px;font-size:16px;font-weight:600}
+.not-found-actions a:first-child{background:var(--green);color:#fff;padding:12px 16px}
+.not-found-actions a:focus-visible{outline:2px solid #a37c4f;outline-offset:3px}
+@media(max-width:560px){.not-found-content{margin-top:64px}.not-found-actions{align-items:flex-start;flex-direction:column;gap:24px}}
+
+.collection-card .collection-photo{transition:box-shadow 500ms cubic-bezier(0.22,1,0.36,1),transform 500ms cubic-bezier(0.22,1,0.36,1)}
+.collection-card:hover .collection-photo,.collection-card:focus-within .collection-photo{box-shadow:0 8px 24px #233e3218;transform:translateY(-2px)}
+.primary,.collection-add,.room-product button,.crm-button{transition:transform 500ms cubic-bezier(0.22,1,0.36,1),background-color 300ms cubic-bezier(0.22,1,0.36,1)}
+.primary:active,.collection-add:active,.room-product button:active,.crm-button:active{transform:scale(.98)}
+@media(prefers-reduced-motion:reduce){.collection-card .collection-photo,.primary,.collection-add,.room-product button,.crm-button{transition:none}.collection-card:hover .collection-photo,.collection-card:focus-within .collection-photo{transform:none}}
